@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import { useMousePosition } from "../hooks/useMousePosition";
-import useSocket from "../hooks/useSocket";
-import { socket } from "../services/socket";
+
+import { useSocketListener, useMousePosition } from "@/hooks";
+import { socket } from "@/services";
 
 type Cursor = { x: number; y: number };
 type UserCursor = {
@@ -73,7 +73,7 @@ export default function MultiCursorCanvas({
 	}, [emulateWS]);
 
 	// WebSocket updates -> only update target, never current
-	useSocket(
+	useSocketListener(
 		"moved",
 		(data: {
 			playerId: string;
@@ -98,13 +98,16 @@ export default function MultiCursorCanvas({
 		},
 	);
 
-	useSocket("player-left", (data: { playerId: string; username: string }) => {
-		console.debug(data);
+	useSocketListener(
+		"player-left",
+		(data: { playerId: string; username: string }) => {
+			console.debug(data);
 
-		const users = usersRef.current;
+			const users = usersRef.current;
 
-		delete users[data.playerId];
-	});
+			delete users[data.playerId];
+		},
+	);
 
 	// Smooth animation loop
 	useEffect(() => {
@@ -135,7 +138,11 @@ export default function MultiCursorCanvas({
 				ctx.fill();
 				ctx.font = "12px Arial";
 				ctx.fillStyle = "white";
-				ctx.fillText(user.name, user.current.x + 10, user.current.y - 10);
+				ctx.fillText(
+					user.name,
+					user.current.x + 10,
+					user.current.y - 10,
+				);
 			}
 
 			requestAnimationFrame(loop);

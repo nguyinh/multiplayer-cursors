@@ -1,5 +1,5 @@
 import { useQueryState } from "nuqs";
-import { createContext, type ReactNode, useContext, useEffect } from "react";
+import { type ReactNode, createContext, useContext, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 interface AuthContextType {

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { useAuth } from "../contexts/AuthContext";
-import { socket } from "../services/socket";
+
+import { useAuth } from "@/contexts";
+import { emitAsync } from "@/services";
 
 function App() {
 	const { username, setNuqsUsername } = useAuth();
@@ -9,46 +10,47 @@ function App() {
 	const [inputRoomId, setInputRoomId] = useState("");
 	const navigate = useNavigate();
 
-	const createGameLobby = () => {
-		socket.emit("create-room", (newRoomId: string) => {
-			socket.emit(
-				"set-username",
-				username,
-				(response: { success: boolean }) => {
-					console.log(response);
-
-					if (response.success) {
-						navigate(`/realtime-cursors/${newRoomId}/lobby`);
-						setNuqsUsername(username);
-					} else {
-						console.error("Failed to set username");
-					}
-				},
-			);
+	const createGameLobby = async () => {
+		const usernameResponse = await emitAsync<string>("lobby:set-username", {
+			payload: username,
+			expectResponse: true,
 		});
+		console.log(usernameResponse);
+
+		const roomIdResponse = await emitAsync<string>("lobby:create-room", {
+			expectResponse: true,
+		});
+
+		console.log(roomIdResponse);
+
+		if (usernameResponse && roomIdResponse) {
+			navigate(`/card-battle/${roomIdResponse}/lobby`);
+			setNuqsUsername(usernameResponse);
+		} else {
+			console.error("Failed to create game lobby");
+		}
 	};
 
-	const joinGameLobby = () => {
-		console.log("setting username");
-		socket.emit("set-username", username, (response: { success: boolean }) => {
-			console.log(response);
-
-			if (response.success) {
-				socket.emit("join-room", inputRoomId, (roomId: string) => {
-					console.log(response);
-
-					if (roomId) {
-						console.log(`Joined room: ${roomId}`);
-						navigate(`/realtime-cursors/${roomId}/lobby`);
-						setNuqsUsername(username);
-					} else {
-						console.error("Failed to join room");
-					}
-				});
-			} else {
-				console.error("Failed to set username");
-			}
+	const joinGameLobby = async () => {
+		const usernameResponse = await emitAsync<string>("lobby:set-username", {
+			payload: username,
+			expectResponse: true,
 		});
+		console.log(usernameResponse);
+
+		const roomIdResponse = await emitAsync<string>("lobby:join-room", {
+			payload: inputRoomId,
+			expectResponse: true,
+		});
+
+		console.log(roomIdResponse);
+
+		if (usernameResponse && roomIdResponse) {
+			navigate(`/card-battle/${roomIdResponse}/lobby`);
+			setNuqsUsername(username);
+		} else {
+			console.error("Failed to join game lobby");
+		}
 	};
 
 	return (
@@ -73,7 +75,11 @@ function App() {
 					Connected as <pre>{username}</pre>
 				</p>
 
-				<button onClick={createGameLobby} disabled={!username} type="button">
+				<button
+					onClick={createGameLobby}
+					disabled={!username}
+					type="button"
+				>
 					Create a game
 				</button>
 
