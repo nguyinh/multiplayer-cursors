@@ -6,11 +6,16 @@
 		"useIgnoreFile": false
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": ["**", "!**/node_modules/*", "!**/dist/*", "!**/.vscode/*"]
 	},
 	"formatter": {
 		"enabled": true,
-		"indentStyle": "tab"
+		"indentStyle": "tab",
+		"formatWithErrors": false,
+		"indentWidth": 4,
+		"lineEnding": "lf",
+		"attributePosition": "auto"
 	},
 	"linter": {
 		"enabled": true,
@@ -27,7 +32,24 @@
 		"enabled": true,
 		"actions": {
 			"source": {
-				"organizeImports": "on"
+				"organizeImports": {
+					"level": "on",
+					"options": {
+						"groups": [
+							":PACKAGE:",
+							":NODE:",
+							":BLANK_LINE:",
+							"@/*",
+							"@/*/**",
+							":BLANK_LINE:",
+							"~/*",
+							"~/*/**",
+							":BLANK_LINE:",
+							["./**"]
+						],
+						"identifierOrder": "lexicographic"
+					}
+				}
 			}
 		}
 	}

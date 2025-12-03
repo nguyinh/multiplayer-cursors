@@ -1,5 +1,4 @@
-import { Cards } from "..";
-import { Player } from "./";
+import { Cards, Player } from "@/entities";
 
 describe("Player Entity", () => {
 	const username = "testUser";

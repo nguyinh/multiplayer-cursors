@@ -54,7 +54,9 @@ export class CardBattle {
 			return null;
 		}
 
-		const shuffledDeck = CardsEntity.shuffle(CardsEntity.generateFullDeck());
+		const shuffledDeck = CardsEntity.shuffle(
+			CardsEntity.generateFullDeck(),
+		);
 		const [deck1, deck2] = CardsEntity.distribute(shuffledDeck);
 
 		this.players[0].giveCards(deck1);
@@ -138,7 +140,9 @@ export class CardBattle {
 		const adversary = this.getAdversary(player);
 
 		if (isWrongTap) {
-			logger.debug(`❌ ${player.get().username} tapped the heap incorrectly.`);
+			logger.debug(
+				`❌ ${player.get().username} tapped the heap incorrectly.`,
+			);
 
 			if (adversary) {
 				adversary.giveCards(this.heap);

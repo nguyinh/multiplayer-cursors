@@ -1,4 +1,5 @@
 import { Player } from "@/entities";
+
 import { CardBattle } from ".";
 
 describe("Game initialization", () => {

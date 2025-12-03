@@ -1,7 +1,8 @@
-import http from "node:http";
 import cors from "cors";
 import express from "express";
 import { Server } from "socket.io";
+import http from "node:http";
+
 import { registerSocketHandlers } from "@/services/sockets";
 
 const app = express();

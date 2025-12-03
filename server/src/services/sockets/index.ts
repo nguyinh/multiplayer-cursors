@@ -1,8 +1,9 @@
 import type { Server, Socket } from "socket.io";
-import { logger } from "../logger";
-import { CardBattle } from "../card-battle";
 import type { PlayerSocket } from "src/types/sockets";
+
 import { Player } from "@/entities";
+import { CardBattle } from "@/services/card-battle";
+import { logger } from "@/services/logger";
 
 function getPlayer(socket: Pick<Socket, "id" | "data">): PlayerSocket {
 	return {
@@ -25,7 +26,9 @@ export function registerSocketHandlers(io: Server, socket: Socket) {
 	socket.on(
 		"lobby:set-username",
 		(username: string, callback: (username: string) => void) => {
-			logger.debug(`Set username '${username}' for socket [${socket.id}]`);
+			logger.debug(
+				`Set username '${username}' for socket [${socket.id}]`,
+			);
 			socket.data.username = username;
 			callback(username);
 		},
@@ -42,7 +45,9 @@ export function registerSocketHandlers(io: Server, socket: Socket) {
 	socket.on(
 		"lobby:join-room",
 		(roomId: string, callback: (roomId: string) => void) => {
-			logger.debug(`Player ${formatPlayer(socket)} joining room: ${roomId}`);
+			logger.debug(
+				`Player ${formatPlayer(socket)} joining room: ${roomId}`,
+			);
 
 			socket.join(roomId);
 
@@ -57,7 +62,9 @@ export function registerSocketHandlers(io: Server, socket: Socket) {
 
 	socket.on("lobby:leave-room", () => {
 		socket.rooms.forEach((roomId) => {
-			logger.debug(`Player ${formatPlayer(socket)} leaving room: ${roomId}`);
+			logger.debug(
+				`Player ${formatPlayer(socket)} leaving room: ${roomId}`,
+			);
 			socket.leave(roomId);
 			io.to(roomId).emit("lobby:player-left", {
 				playerId: socket.id,
@@ -69,10 +76,9 @@ export function registerSocketHandlers(io: Server, socket: Socket) {
 	socket.on(
 		"lobby:get-room-members",
 		async (roomId: string, callback: (ids: PlayerSocket[]) => void) => {
-			const sockets = (await io.in(roomId).fetchSockets()) as unknown as Pick<
-				Socket,
-				"id" | "data"
-			>[];
+			const sockets = (await io
+				.in(roomId)
+				.fetchSockets()) as unknown as Pick<Socket, "id" | "data">[];
 
 			const socketPlayers = sockets.map((socket) => getPlayer(socket));
 			console.log(socketPlayers);
@@ -90,11 +96,16 @@ export function registerSocketHandlers(io: Server, socket: Socket) {
 		// Get sockets in the room
 		const roomSockets = Array.from(
 			io.sockets.adapter.rooms.get(roomId) || [],
-		).map((socketId) => getPlayer(io.sockets.sockets.get(socketId) as Socket));
+		).map((socketId) =>
+			getPlayer(io.sockets.sockets.get(socketId) as Socket),
+		);
 
 		const game = new CardBattle();
 		roomSockets.forEach((playerSocket) => {
-			const player = new Player(playerSocket.username, playerSocket.socketId);
+			const player = new Player(
+				playerSocket.username,
+				playerSocket.socketId,
+			);
 			game.addPlayer(player);
 		});
 		game.startGame();
