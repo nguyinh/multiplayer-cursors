@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useParams } from "react-router";
 
-import MultiCursorCanvas from "../components/MultiCursorCanvas";
 import { useAuth } from "@/contexts";
 import { socket } from "@/services";
+
+import MultiCursorCanvas from "../components/MultiCursorCanvas";
 
 export default function RealtimeCursors() {
 	const { roomId } = useParams<{ roomId?: string }>();

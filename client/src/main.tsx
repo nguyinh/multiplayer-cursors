@@ -11,6 +11,7 @@ import CardBattle from "./pages/CardBattle.tsx";
 import GameLobby from "./pages/GameLobby.tsx";
 import Home from "./pages/Home.tsx";
 import Identification from "./pages/Identification.tsx";
+import { NotificationProvider } from "@/contexts";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -19,33 +20,44 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
 	<BrowserRouter>
-		<NuqsAdapter>
-			<AuthProvider>
-				<AuthGuard>
-					<Routes>
-						<Route path="/" element={<Home />} />
-
-						<Route path="/identify" element={<Identification />} />
-
-						{/* <Route path="/realtime-cursors" element={<RealtimeCursors />} /> */}
-						<Route path="/card-battle">
-							<Route path="new" element={<GameLobby />} />
+		<NotificationProvider>
+			<NuqsAdapter>
+				<AuthProvider>
+					<AuthGuard>
+						<Routes>
+							<Route path="/" element={<Home />} />
 
 							<Route
-								path=":roomId"
-								element={
-									<SocketProvider>
-										<Outlet />
-									</SocketProvider>
-								}
-							>
-								<Route path="lobby" element={<GameLobby />} />
-								<Route path="game" element={<CardBattle />} />
+								path="/identify"
+								element={<Identification />}
+							/>
+
+							{/* <Route path="/realtime-cursors" element={<RealtimeCursors />} /> */}
+							<Route path="/card-battle">
+								<Route path="new" element={<GameLobby />} />
+
+								<Route
+									path=":roomId"
+									element={
+										<SocketProvider>
+											<Outlet />
+										</SocketProvider>
+									}
+								>
+									<Route
+										path="lobby"
+										element={<GameLobby />}
+									/>
+									<Route
+										path="game"
+										element={<CardBattle />}
+									/>
+								</Route>
 							</Route>
-						</Route>
-					</Routes>
-				</AuthGuard>
-			</AuthProvider>
-		</NuqsAdapter>
+						</Routes>
+					</AuthGuard>
+				</AuthProvider>
+			</NuqsAdapter>
+		</NotificationProvider>
 	</BrowserRouter>,
 );

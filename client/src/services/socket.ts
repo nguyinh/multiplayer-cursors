@@ -37,10 +37,10 @@ export function emitAsync<T = unknown>(
 			};
 
 			if (payload === undefined) {
-				console.debug(`🛜 [Socket](${event})`);
+				console.debug(`🛜⬆️ ${event}`);
 				socket.emit(event, callback);
 			} else {
-				console.debug(`🛜 [Socket](${event})`);
+				console.debug(`🛜⬆️ ${event}`);
 				socket.emit(event, payload, callback);
 			}
 		});
@@ -48,10 +48,10 @@ export function emitAsync<T = unknown>(
 
 	// Fire-and-forget
 	if (payload === undefined) {
-		console.debug(`🛜 [Socket](${event})`);
+		console.debug(`🛜⬆️ ${event}`);
 		socket.emit(event);
 	} else {
-		console.debug(`🛜 [Socket](${event})`);
+		console.debug(`🛜⬆️ ${event}`);
 		socket.emit(event, payload);
 	}
 }

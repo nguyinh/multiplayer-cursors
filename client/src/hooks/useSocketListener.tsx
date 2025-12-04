@@ -8,10 +8,13 @@ export function useSocketListener<T>(
 ) {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: Because. Ok ?
 	useEffect(() => {
-		socket.on(eventName, callback);
+		socket.on(eventName, (...args: T[]) => {
+			console.log(`🛜⬇️ ${eventName}`, ...args);
+			callback(...args);
+		});
 
 		return () => {
-			socket.off(eventName, callback);
+			socket.off(eventName);
 		};
 	}, [eventName]);
 }

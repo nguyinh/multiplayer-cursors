@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { useSocketListener, useMousePosition } from "@/hooks";
+import { useMousePosition, useSocketListener } from "@/hooks";
 import { socket } from "@/services";
 
 type Cursor = { x: number; y: number };

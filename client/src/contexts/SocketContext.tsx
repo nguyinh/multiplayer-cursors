@@ -7,9 +7,10 @@ import {
 } from "react";
 import { useParams } from "react-router";
 
-import { useAuth } from "./AuthContext";
-import { useSocketListener } from "../hooks/useSocketListener";
-import { emitAsync, socket } from "../services/socket";
+import { useAuth } from "@/contexts";
+import { useSocketListener } from "@/hooks";
+import { emitAsync, socket } from "@/services";
+
 import type { PlayerSocket } from "../types";
 import { addPlayer, removePlayer } from "../utils/players";
 
@@ -27,12 +28,17 @@ interface SocketProviderProps {
 	children: ReactNode;
 }
 
-async function setUsername(username: string) {
-	const usernameResponse = await emitAsync<string>("lobby:set-username", {
-		payload: username,
-		expectResponse: true,
-	});
-	console.log(usernameResponse);
+async function setUsername(username: string): Promise<string | null> {
+	try {
+		const usernameSetted = await emitAsync<string>("lobby:set-username", {
+			payload: username,
+			expectResponse: true,
+		});
+		return usernameSetted ?? null;
+	} catch (error) {
+		console.error("Error setting username:", error);
+		return null;
+	}
 }
 
 async function createRoom(): Promise<string | null> {
@@ -88,7 +94,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 		socket.off("reconnect");
 
 		socket.io.on("reconnect", async (attemptNumber: number) => {
-			console.log("reconnecting");
+			console.log("🔄 Reconnecting");
 
 			if (username) {
 				await setUsername(username);
@@ -108,23 +114,19 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 	};
 
 	useEffect(() => {
-		console.log("Detected useEffect for username", username);
 		if (username) {
-			console.log("Setting username as", username);
 			setUsername(username);
 		}
 	}, [username]);
 
 	useEffect(() => {
 		if (roomId) {
-			console.log("Setting room ID as", roomId);
 			joinRoom(roomId).then(async (roomId) => {
 				if (!roomId) {
 					return;
 				}
 
 				const members = await getRoomMembers(roomId);
-				console.log("Fetched room members:", members);
 				setPlayers(members);
 			});
 		}
@@ -155,8 +157,6 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 			console.debug(
 				`❌ Player ${data.playerId} left room ${data.roomId}`,
 			);
-
-			console.log(data);
 
 			setPlayers((prev) => removePlayer(data.playerId, prev));
 		},
