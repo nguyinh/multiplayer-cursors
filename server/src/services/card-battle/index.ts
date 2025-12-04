@@ -48,6 +48,12 @@ export class CardBattle {
 		logger.debug(`👋 Player ${playerInfo.username} added successfully.`);
 	}
 
+	public getPlayerById(socketId: Player["socketId"]): Player | null {
+		const player = this.players.find((p) => p.get().socketId === socketId);
+
+		return player || null;
+	}
+
 	public startGame(): CardBattle | null {
 		if (this.players.length < 2) {
 			logger.warn("Not enough players to start the game.");
@@ -91,11 +97,24 @@ export class CardBattle {
 		return this.players;
 	}
 
-	public play(player: Player) {
+	public play(player: Player): {
+		winner: Player | null;
+		loser: Player | null;
+		currentTurn: Player | null;
+	} {
 		// Check if it is player turn
 		if (player !== this.currentTurn) {
-			logger.error(`It's not ${player.get().username}'s turn.`);
-			return;
+			logger.warn(`It's not ${player.get().username}'s turn.`);
+			const adversary = this.getAdversary(player);
+			adversary.giveCards(this.heap);
+			this.heap = [];
+			this.currentTurn = adversary;
+
+			return {
+				winner: adversary,
+				loser: player,
+				currentTurn: this.currentTurn,
+			};
 		}
 
 		const playedCard = player.playCard();
@@ -105,8 +124,12 @@ export class CardBattle {
 		if (playedCard) {
 			this.heap.push(playedCard);
 		} else {
-			logger.error(`${player.get().username} has no cards to play.`);
-			return;
+			logger.warn(`${player.get().username} has no cards to play.`);
+			return {
+				winner: null,
+				loser: null,
+				currentTurn: this.currentTurn,
+			};
 		}
 
 		// Determine game equality
@@ -115,18 +138,37 @@ export class CardBattle {
 				"🔄 Maximum turns reached without a winner. Game is a draw.",
 			);
 			this.currentTurn = null;
-			return;
+
+			return {
+				winner: null,
+				loser: null,
+				currentTurn: this.currentTurn,
+			};
 		}
 
 		this.nextTurn();
+
+		return {
+			winner: null,
+			loser: null,
+			currentTurn: this.currentTurn,
+		};
 	}
 
-	public tapHeap(player: Player) {
+	public tapHeap(player: Player): {
+		winner: Player | null;
+		loser: Player | null;
+		currentTurn: Player | null;
+	} {
 		logger.debug(`👏 ${player.get().username} tapped the heap.`);
 
 		if (this.heap.length === 0) {
 			logger.warn("Heap is empty, cannot tap.");
-			return;
+			return {
+				winner: null,
+				loser: null,
+				currentTurn: this.currentTurn,
+			};
 		}
 
 		const notEnoughCardsInHeap = this.heap.length < 2;
@@ -150,7 +192,11 @@ export class CardBattle {
 			this.heap = [];
 			this.currentTurn = adversary;
 
-			return;
+			return {
+				winner: adversary,
+				loser: player,
+				currentTurn: this.currentTurn,
+			};
 		}
 
 		logger.debug(`✅ ${player.get().username} won this round.`);
@@ -163,12 +209,27 @@ export class CardBattle {
 			this.setWinner(adversary);
 			this.currentTurn = null;
 			logger.debug(`🏆 ${adversary.get().username} has won the game!`);
+			return {
+				winner: adversary,
+				loser: player,
+				currentTurn: this.currentTurn,
+			};
 		} else if (adversary && !adversary.hasCards()) {
 			this.setWinner(player);
 			this.currentTurn = null;
 			logger.debug(`🏆 ${player.get().username} has won the game!`);
+			return {
+				winner: player,
+				loser: adversary,
+				currentTurn: this.currentTurn,
+			};
 		} else {
 			this.currentTurn = player;
+			return {
+				winner: player,
+				loser: adversary,
+				currentTurn: this.currentTurn,
+			};
 		}
 	}
 

@@ -91,7 +91,6 @@ export function registerSocketHandlers(io: Server, socket: Socket) {
 		logger.debug(
 			`Player ${formatPlayer(socket)} starting game in room: ${roomId}`,
 		);
-		io.to(roomId).emit("lobby:game-started", roomId);
 
 		// Get sockets in the room
 		const roomSockets = Array.from(
@@ -101,6 +100,7 @@ export function registerSocketHandlers(io: Server, socket: Socket) {
 		);
 
 		const game = new CardBattle();
+
 		roomSockets.forEach((playerSocket) => {
 			const player = new Player(
 				playerSocket.username,
@@ -110,9 +110,101 @@ export function registerSocketHandlers(io: Server, socket: Socket) {
 		});
 		game.startGame();
 		games.set(roomId, game);
+
+		io.to(roomId).emit("lobby:game-started", roomId);
+		io.to(roomId).emit("game:state", {
+			currentTurn: game.getPlayerTurn(),
+		});
 	});
 
 	// -------- Game events --------
+
+	socket.on("game:get-state", (roomId: string) => {
+		logger.debug(
+			`Received play-card from ${formatPlayer(socket)} in room ${roomId}`,
+		);
+
+		const game = games.get(roomId);
+		if (!game) {
+			logger.warn(`Game not found for room ${roomId}`);
+			return;
+		}
+		const player = game.getPlayerById(socket.id);
+		if (!player) {
+			logger.warn(
+				`Player ${formatPlayer(socket)} not found in game for room ${roomId}`,
+			);
+			return;
+		}
+
+		game.play(player);
+		const heapDeck = game.getHeap();
+
+		const heapCard = heapDeck.at(-1);
+
+		io.to(roomId).emit("game:state", {
+			currentTurn: game.getPlayerTurn(),
+			heapCard,
+		});
+	});
+
+	socket.on("game:play-card", (roomId: string) => {
+		logger.debug(
+			`Received play-card from ${formatPlayer(socket)} in room ${roomId}`,
+		);
+
+		const game = games.get(roomId);
+		if (!game) {
+			logger.warn(`Game not found for room ${roomId}`);
+			return;
+		}
+		const player = game.getPlayerById(socket.id);
+		if (!player) {
+			logger.warn(
+				`Player ${formatPlayer(socket)} not found in game for room ${roomId}`,
+			);
+			return;
+		}
+
+		game.play(player);
+		const heapDeck = game.getHeap();
+
+		const playedCard = heapDeck.at(-1);
+
+		// io.to(roomId).emit("game:heap-updated", playedCard);
+		io.to(roomId).emit("game:state", {
+			currentTurn: game.getPlayerTurn(),
+			heapCard: playedCard,
+		});
+	});
+
+	socket.on("game:tap-heap", (roomId: string) => {
+		logger.debug(
+			`Received tap-heap from ${formatPlayer(socket)} in room ${roomId}`,
+		);
+
+		const game = games.get(roomId);
+		if (!game) {
+			logger.warn(`Game not found for room ${roomId}`);
+			return;
+		}
+		const player = game.getPlayerById(socket.id);
+		if (!player) {
+			logger.warn(
+				`Player ${formatPlayer(socket)} not found in game for room ${roomId}`,
+			);
+			return;
+		}
+
+		const { winner, loser, currentTurn } = game.tapHeap(player);
+
+		io.to(roomId).emit("game:tap-result", { winner, loser, currentTurn });
+
+		io.to(roomId).emit("game:state", {
+			currentTurn: game.getPlayerTurn(),
+			heapCard: null,
+		});
+	});
 
 	// socket.on("buzz", () => {
 	// 	console.log(`Player ${socket.id} buzzed!`);
@@ -138,61 +230,6 @@ export function registerSocketHandlers(io: Server, socket: Socket) {
 
 	// 	io.to(roomId).emit("game-started", roomId);
 	// });
-
-	// socket.on(
-	// 	"set-username",
-	// 	(username: string, callback: (response: { success: boolean }) => void) => {
-	// 		console.log(`🆔 Player ${socket.id} set username to: ${username}`);
-	// 		socket.data.username = username;
-	// 		callback({ success: true });
-	// 	},
-	// );
-
-	// socket.on("create-room", (callback: (roomId: string) => void) => {
-	// 	const roomId = Math.random().toString(36).substring(2, 8);
-	// 	console.log(`Room created: ${roomId} by ${socket.id}`);
-
-	// 	socket.join(roomId);
-
-	// 	console.log(`Notify players: player-joined ${roomId} by ${socket.id}`);
-	// 	socket.to(roomId).emit("player-joined", {
-	// 		playerId: socket.id,
-	// 		username: socket.data.username,
-	// 		roomId,
-	// 	});
-
-	// 	callback(roomId);
-	// });
-
-	// socket.on(
-	// 	"join-room",
-	// 	(roomId: string, callback: (roomId: string) => void) => {
-	// 		console.log(`Player ${socket.data.username} joined room ${roomId}`);
-
-	// 		socket.join(roomId);
-
-	// 		console.log(
-	// 			`Notify players: player-joined ${roomId} by ${socket.data.username}`,
-	// 		);
-	// 		socket.to(roomId).emit("player-joined", {
-	// 			playerId: socket.id,
-	// 			username: socket.data.username,
-	// 			roomId,
-	// 		});
-
-	// 		callback(roomId);
-	// 	},
-	// );
-
-	// socket.on(
-	// 	"get-room-members",
-	// 	async (roomId: string, callback: (ids: string[]) => void) => {
-	// 		const sockets = await io.in(roomId).fetchSockets();
-
-	// 		const usernames = sockets.map((socket) => socket.data.username);
-	// 		callback(usernames);
-	// 	},
-	// );
 
 	// socket.on("leave", () => {
 	// 	const rooms = socket.rooms;
